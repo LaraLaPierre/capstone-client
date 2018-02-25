@@ -1,17 +1,33 @@
 
 require 'unirest'
+require 'date'
+
+@get_weather_api ="https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22chicago%2C%20il%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys"
+
+response = Unirest.get(@get_weather_api)
+
+channel = response.body["query"]["results"]["channel"]
+location_city = channel["location"]["city"]
+location_state = channel["location"]["region"]
+temp = channel["item"]["condition"]["temp"]
+units = channel["units"]["temperature"]
+condition = channel["item"]["condition"]["text"]
 
 while true 
   puts " "
   puts "Welcome to your Calendar App!! "
   puts "===============================" 
   puts " "
+  puts "Today is " + DateTime.now.strftime("%A %B %e %Y ")
+  puts "The weather in #{location_city} is #{temp}#{units} and #{condition}"
+  puts "===============================" 
   puts "Please select an option from the menu below"
   puts " "
   puts "    [1] See all Calendar Events"
   puts "    [2] See one Calendar Event"
   puts "        [a] Search Events by Name"
   puts "        [b] Search Events by Date"
+  puts "        [c] Search Events by Location"
   puts "    [3] Create a new Calendar Event"
   puts "    [4] Update a Calendar Event"
   puts "    [5] Destroy a Calendar Event"
@@ -27,10 +43,27 @@ while true
     puts JSON.pretty_generate(response.body)
 
   elsif user_input == '2'
+
+
     puts " Enter a Calendar Event Id"
+
     input_id = gets.chomp 
-    response = Unirest.get("http://localhost:3000/calendar_events/#{input_id}")
-    puts JSON.pretty_generate(response.body)
+    event_response = Unirest.get("http://localhost:3000/calendar_events/#{input_id}")
+    event_date = event_response["date"].strftime("%e %b %Y")
+    if event_date <= 10.days.from_now
+      weather_response = Unirest.get(@get_weather_api)
+      forecast_array =  channel["item"]["forecast"]
+      forecast_array.each do |date|
+        if date["date"] == event_date
+         event_forecast = date["date"]
+        else 
+          event_forecast = "Weather forecast is not available at this time"
+        end 
+      end 
+    end 
+
+
+    puts JSON.pretty_generate(event_response.body)
 
   elsif user_input == 'a'
     print "Enter an Event name to search by: "
@@ -40,12 +73,18 @@ while true
 
     puts calendar_events.body
 
-
   elsif user_input == 'b'
     print "Enter an Event date to search by (YYYY-MM-DD): "
       search_term = gets.chomp
 
       calendar_events = Unirest.get("http://localhost:3000/calendar_events?date=#{search_term}")
+      puts calendar_events.body
+
+  elsif user_input == 'c'
+    print "Enter a Location to search by: "
+      search_term = gets.chomp
+
+      calendar_events = Unirest.get("http://localhost:3000/calendar_events?location=#{search_term}")
       puts calendar_events.body
 
   elsif user_input == '3'
@@ -62,6 +101,10 @@ while true
 
       print "Event Location: "
       client_params[:location] = gets.chomp
+
+      print "Choose an event category: "
+      puts "[1] Relaxing [2] Learning [3] Entertaining "
+      client_params[:category_id] = gets.chomp
 
       client_params
 
