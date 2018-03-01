@@ -13,10 +13,12 @@ temp = channel["item"]["condition"]["temp"]
 units = channel["units"]["temperature"]
 condition = channel["item"]["condition"]["text"]
 
-while true 
   puts " "
   puts "Welcome to your Calendar App!! "
   puts "===============================" 
+
+while true 
+  
   puts " "
   puts "Today is " + DateTime.now.strftime("%A %B %e %Y ")
   puts "The weather in #{location_city} is #{temp}#{units} and #{condition}"
@@ -45,35 +47,35 @@ while true
 
   elsif user_input == '2'
 
-    puts " Enter a Calendar Event Id"
-
-    input_id = gets.chomp 
+    print " Enter a Calendar Event Id:  " 
+    input_id = gets.chomp
 
     event_response = Unirest.get("http://localhost:3000/calendar_events/#{input_id}")
 
     event_date = event_response.body["date"]
 
-    ugly_event_date = DateTime.strptime(event_date, '%Y-%m-%d')
+    parsed_event_date = Date.parse(event_date)
     
-    banana = Date.today + 10
+    latest_date = Date.today + 10
  
-    if ugly_event_date <= banana
+    if parsed_event_date <= latest_date
       weather_response = Unirest.get(@get_weather_api)
+      forecast_dates =  weather_response.body["query"]["results"]["channel"]["item"]["forecast"]
       
-      forecast_array =  weather_response.body["query"]["results"]["channel"]["item"]["forecast"]
-      puts forecast_array
-      forecast_array.each do |date|
-        ugly_forecast_date = DateTime.strptime(forecast_array["date"], '%Y-%m-%d')
-        if ugly_forecast_date == ugly_event_date
-         event_forecast = ugly_forecast_date
+      forecast_dates.each do |date|
+        parsed_forecast_dates = Date.parse(date["date"])
+        if parsed_event_date == parsed_forecast_dates
+          puts 
+          puts "*" * 110
+          puts "The forecast for #{parsed_forecast_dates.strftime("%A, %B %e, %Y")} is a high of #{date["high"]}F and a low of #{date["low"]}F with #{date["text"]} conditions."
+          puts "*" * 110
         else 
           event_forecast = "Weather forecast is not available at this time"
         end 
       end 
-    end 
-
-
-    # puts JSON.pretty_generate(event_response.body)
+    end
+    puts JSON.pretty_generate(event_response.body)
+    puts "*" * 110
 
   elsif user_input == 'a'
     print "Enter an Event name to search by: "
@@ -228,7 +230,10 @@ while true
     Unirest.clear_default_headers
 
   elsif user_input == "q"
-    puts "thank you for visiting the Nerd Store"
+    puts "*" * 110
+    puts "*" * 110
+    puts "Have a beautiful day!"
+    puts "*" * 110
     exit
   end
 end 
