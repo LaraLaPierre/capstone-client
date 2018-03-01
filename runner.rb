@@ -34,6 +34,7 @@ while true
   puts "    [signup] Sign up for an account"
   puts "    [login] Log in to your account"
   puts "    [logout] Log out of your account"
+  puts "    [q] to exit your Calendar App"
 
 
   user_input = gets.chomp
@@ -44,18 +45,27 @@ while true
 
   elsif user_input == '2'
 
-
     puts " Enter a Calendar Event Id"
 
     input_id = gets.chomp 
+
     event_response = Unirest.get("http://localhost:3000/calendar_events/#{input_id}")
-    event_date = event_response["date"].strftime("%e %b %Y")
-    if event_date <= 10.days.from_now
+
+    event_date = event_response.body["date"]
+
+    ugly_event_date = DateTime.strptime(event_date, '%Y-%m-%d')
+    
+    banana = Date.today + 10
+ 
+    if ugly_event_date <= banana
       weather_response = Unirest.get(@get_weather_api)
-      forecast_array =  channel["item"]["forecast"]
+      
+      forecast_array =  weather_response.body["query"]["results"]["channel"]["item"]["forecast"]
+      puts forecast_array
       forecast_array.each do |date|
-        if date["date"] == event_date
-         event_forecast = date["date"]
+        ugly_forecast_date = DateTime.strptime(forecast_array["date"], '%Y-%m-%d')
+        if ugly_forecast_date == ugly_event_date
+         event_forecast = ugly_forecast_date
         else 
           event_forecast = "Weather forecast is not available at this time"
         end 
@@ -63,7 +73,7 @@ while true
     end 
 
 
-    puts JSON.pretty_generate(event_response.body)
+    # puts JSON.pretty_generate(event_response.body)
 
   elsif user_input == 'a'
     print "Enter an Event name to search by: "
