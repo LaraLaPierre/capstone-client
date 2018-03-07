@@ -51,29 +51,7 @@ while true
     input_id = gets.chomp
 
     event_response = Unirest.get("http://localhost:3000/calendar_events/#{input_id}")
-
-    event_date = event_response.body["date"]
-
-    parsed_event_date = Date.parse(event_date)
     
-    latest_date = Date.today + 10
- 
-    if parsed_event_date <= latest_date
-      weather_response = Unirest.get(@get_weather_api)
-      forecast_dates =  weather_response.body["query"]["results"]["channel"]["item"]["forecast"]
-      
-      forecast_dates.each do |date|
-        parsed_forecast_dates = Date.parse(date["date"])
-        if parsed_event_date == parsed_forecast_dates
-          puts 
-          puts "*" * 110
-          puts "The forecast for #{parsed_forecast_dates.strftime("%A, %B %e, %Y")} is a high of #{date["high"]}F and a low of #{date["low"]}F with #{date["text"]} conditions."
-          puts "*" * 110
-        else 
-          event_forecast = "Weather forecast is not available at this time"
-        end 
-      end 
-    end
     puts JSON.pretty_generate(event_response.body)
     puts "*" * 110
 
